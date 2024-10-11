@@ -31,10 +31,10 @@ app.post("/urls", (req, res) => {
     //if it does, generate until a new id is there
     id = generateRandomString();
   }
-  //validate the longURL
+  //validate the longURL is valid
   let longURL = req.body.longURL;
   if (!validUrl.isUri(longURL)) {
-    return res.status(400).send(`Invalid URL format`);
+    return res.redirect(`/urls/new?error=Invalid URL format`);
   }
   
   urlDatabase[id] = longURL; // Add a new key-value pair to the urlDatabase object
