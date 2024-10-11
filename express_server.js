@@ -32,11 +32,12 @@ app.post("/urls", (req, res) => {
     id = generateRandomString();
   }
   //validate the longURL
+  let longURL = req.body.longURL;
   if (!validUrl.isUri(longURL)) {
     return res.status(400).send(`Invalid URL format`);
   }
   
-  urlDatabase[id] = req.body.longURL; // Add a new key-value pair to the urlDatabase object
+  urlDatabase[id] = longURL; // Add a new key-value pair to the urlDatabase object
   
   // redirection to /urls/:id
   res.redirect(`/urls/${id}`);
