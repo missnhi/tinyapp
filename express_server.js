@@ -25,10 +25,20 @@ app.use(express.urlencoded({extended: true}));
 //a POST Route to Receive the Form Submission
 app.post("/urls", (req, res) => {
   // console.log(req.body); // Log the POST request body to the console
-  const id = generateRandomString();
+  let id = generateRandomString();
+  //check if id already exists
+  while (urlDatabase[id]) {
+    //if it does, generate until a new id is there
+    id = generateRandomString();
+  }
+  //validate the longURL
+  if (!validUrl.isUri(longURL)) {
+    return res.status(400).send(`Invalid URL format`);
+  }
+  
   urlDatabase[id] = req.body.longURL; // Add a new key-value pair to the urlDatabase object
+  
   // redirection to /urls/:id
-  console.log(urlDatabase);
   res.redirect(`/urls/${id}`);
 });
 
@@ -63,10 +73,7 @@ app.get("/u/:id", (req, res) => {
   if (!longURL) {
     return res.status(404).send("URL not found");
   }
-// Validate the URL format to ensure it's a proper URL
-  if (!validUrl.isUri(longURL)) {
-    return res.status(400).send(`Invalid URL format`);
-  }
+  
   res.redirect(longURL);
   
 });
