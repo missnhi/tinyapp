@@ -43,6 +43,14 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+//POST route to delete a URL resource
+app.post("/urls/:id/delete", (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];
+  // redirection to urls_index page ("/urls")
+  res.redirect("/urls");
+});
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
