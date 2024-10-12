@@ -20,6 +20,23 @@ This is to signify that it's a partial, in this case, a header partial.-->
             <div class="navbar-nav">
                 <a class="nav-item nav-link" href="/urls">My URLs</a>
                 <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+
+                <!--                a form that POSTs to /login
+                - a single text input element with the attribute name="username"
+                - a submit button to submit the form-->
+                <form class="form-inline ml-auto" action="/login" method="POST">
+                    <div class="form-group mb-2">
+                        <label for="username" class="sr-only">Username</label>
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="username"
+                                name="username"
+                                placeholder="Username"
+                        />
+                    </div>
+                    <button type="submit" class="btn btn-primary mb-2 ml-auto">Login</button>
+                </form>
             </div>
         </div>
     </nav>

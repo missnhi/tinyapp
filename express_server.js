@@ -58,6 +58,12 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
+//POST to /login to set a cookie that is the username
+app.post("/login", (req, res) => {
+  res.cookie('username', req.body.username);
+  res.redirect("/urls");
+});
+
 // GET route for the home page
 app.get("/", (req, res) => {
   res.send("Hello!");
