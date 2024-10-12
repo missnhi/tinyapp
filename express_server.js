@@ -124,3 +124,11 @@ app.get("/u/:id", (req, res) => {
   
   res.redirect(longURL);
 });
+
+//GET route to /register endpoint
+app.get("/register", (req, res) => {
+  const templateVars = {
+    username: req.cookies["username"],
+  };
+  res.render("register", templateVars);
+});
