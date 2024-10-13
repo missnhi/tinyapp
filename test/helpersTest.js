@@ -1,5 +1,5 @@
 const {assert} = require('chai');
-const {getUserById} = require('../helpers');
+const {getUserById, urlsForUser} = require('../helpers');
 
 const testUsers = {
   "userRandomID": {
@@ -32,5 +32,35 @@ describe('getUserById', function() {
     const req = {session: {user_id: "nonexistentID"}};
     const user = getUserById(req, testUsers);
     assert.isUndefined(user, 'user is undefined');
+  });
+});
+
+const testUrlDatabase = {
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"},
+  "9sm5xK": {longURL: "http://www.google.com", userID: "user2RandomID"}
+};
+
+describe('urlsForUser', function() {
+  it('should return urls that belong to the specified user', function() {
+    const userUrls = urlsForUser("userRandomID", testUrlDatabase);
+    const expectedUrls = {
+      "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"}
+    };
+    assert.deepEqual(userUrls, expectedUrls, 'returns urls for the specified user');
+  });
+  
+  it('should return an empty object if the urlDatabase does not contain any urls that belong to the specified user', function() {
+    const userUrls = urlsForUser("nonexistentUserID", testUrlDatabase);
+    assert.deepEqual(userUrls, {}, 'returns an empty object for a user with no urls');
+  });
+  
+  it('should return an empty object if the urlDatabase is empty', function() {
+    const userUrls = urlsForUser("userRandomID", {});
+    assert.deepEqual(userUrls, {}, 'returns an empty object when urlDatabase is empty');
+  });
+  
+  it('should not return any urls that do not belong to the specified user', function() {
+    const userUrls = urlsForUser("userRandomID", testUrlDatabase);
+    assert.notProperty(userUrls, "9sm5xK", 'does not return urls that do not belong to the specified user');
   });
 });
