@@ -2,15 +2,19 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const validUrl = require('valid-url');
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 
 // Set the view engine to ejs
 app.set("view engine", "ejs");
 
-// Use cookie-parser middleware
-app.use(cookieParser());
+// Use cookie-session middleware
+app.use(cookieSession({
+  name: 'session',
+  keys: ['yourSecretKey1', 'yourSecretKey2'], // Replace with your own secret keys
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
 // In-memory database to store URLs
 const urlDatabase = {
@@ -44,7 +48,7 @@ function generateRandomString() {
 
 // Helper function to get user object by user_id cookie
 function getUserById(req) {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   return users[userId];
 }
 
@@ -278,7 +282,7 @@ app.post("/login", (req, res) => {
   
   if (result) {
     // Passwords match, set the user_id cookie and redirect to /urls
-    res.cookie('user_id', user.id);
+    req.session.user_id = user.id;
     res.redirect("/urls");
   } else {
     // Passwords do not match, return an error
@@ -289,7 +293,7 @@ app.post("/login", (req, res) => {
 
 //POST to/logout to clear the cookie
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect("/login");
   
 });
@@ -326,7 +330,7 @@ app.post("/register", (req, res) => {
   };
   
   // Set a user_id cookie containing the user's newly generated ID
-  res.cookie('user_id', id);
+  req.session.user_id = id;
   res.redirect("/urls");
 });
 
