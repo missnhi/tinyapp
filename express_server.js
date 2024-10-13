@@ -2,19 +2,18 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const validUrl = require('valid-url');
-const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const saltRounds = 10;
+
+// Import middleware and helper functions
+const {sessionMiddleware} = require('./middleware');
+const {users, generateRandomString, getUserById, urlsForUser} = require('./helpers');
 
 // Set the view engine to ejs
 app.set("view engine", "ejs");
 
 // Use cookie-session middleware
-app.use(cookieSession({
-  name: 'session',
-  keys: ['yourSecretKey1', 'yourSecretKey2'], // Replace with your own secret keys
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}));
+app.use(sessionMiddleware);
 
 // In-memory database to store URLs
 const urlDatabase = {
@@ -27,41 +26,6 @@ const urlDatabase = {
     userID: "aJ48lW",
   },
 };
-
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "nhi.phan.ley@gmail.com",
-    password: "1234",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "1234",
-  },
-};
-
-// Function to generate a random string for the shortURL: ex: b2xVn2
-function generateRandomString() {
-  return Math.random().toString(36).substr(2, 6);
-}
-
-// Helper function to get user object by user_id cookie
-function getUserById(req) {
-  const userId = req.session.user_id;
-  return users[userId];
-}
-
-//filer the URLs by user_id
-function urlsForUser(id) {
-  const urls = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      urls[url] = urlDatabase[url];
-    }
-  }
-  return urls;
-}
 
 
 // Middleware to parse the body of POST requests
@@ -92,7 +56,7 @@ app.get("/urls", (req, res) => {
   }
   
   //only user that create the URL can see the URL
-  const urlOwner = urlsForUser(user.id);
+  const urlOwner = urlsForUser(user.id, urlDatabase);
   const templateVars = {
     urls: urlOwner,
     user,
