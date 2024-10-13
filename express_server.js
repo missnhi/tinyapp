@@ -224,3 +224,12 @@ app.get("/register", (req, res) => {
   };
   res.render("register", templateVars);
 });
+
+// GET route to /login endpoint with login.ejs
+app.get("/login", (req, res) => {
+  const user = getUserById(req);
+  const templateVars = {
+    user,
+  };
+  res.render("login", templateVars);
+});

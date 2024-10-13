@@ -28,19 +28,8 @@ This is to signify that it's a partial, in this case, a header partial.-->
                         <button type="submit" class="btn btn-outline-light">Logout</button>
                     </form>
                 <% } else { %>
-                    <form class="form-inline" action="/login" method="POST">
-                        <div class="form-group mb-2">
-                            <label for="username" class="sr-only">Username</label>
-                            <input
-                                    type="text"
-                                    class="form-control"
-                                    id="username"
-                                    name="username"
-                                    placeholder="Username"
-                            />
-                        </div>
-                        <button type="submit" class="btn btn-primary mb-2 ml-auto">Login</button>
-                    </form>
+                    <a class="nav-item nav-link" href="/register">Register</a>
+                    <a class="nav-item nav-link" href="/login">Login</a>
                 <% } %>
             </div>
         </div>
