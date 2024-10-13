@@ -19,13 +19,13 @@ const urlDatabase = {
 const users = {
   userRandomID: {
     id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    email: "nhi.phan.ley@gmail.com",
+    password: "1234",
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: "1234",
   },
 };
 
@@ -87,7 +87,7 @@ app.post("/login", (req, res) => {
 
 //POST to/logout to clear the cookie
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect("/urls");
 });
 
@@ -96,6 +96,8 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const id = generateRandomString();
+  
+  //check if email or password is empty
   if (!email || !password) {
     return res.status(400).send("Email and password are required");
   }
