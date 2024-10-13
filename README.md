@@ -5,8 +5,8 @@ bit.ly).
 
 ## Final Product
 
-!["screenshot description"](#)
-!["screenshot description"](#)
+!["Login Page"](https://github.com/missnhi/tinyapp/blob/main/docs/login-page.png)
+!["URL Page"](https://github.com/missnhi/tinyapp/blob/main/docs/url-page.png)
 
 ## Dependencies
 
