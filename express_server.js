@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8080;
 const validUrl = require('valid-url');
 const cookieParser = require('cookie-parser');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 
 // Set the view engine to ejs
@@ -63,160 +63,6 @@ function urlsForUser(id) {
 // Middleware to parse the body of POST requests
 app.use(express.urlencoded({extended: true}));
 
-// POST route to receive the form submission and create a new short URL
-app.post("/urls", (req, res) => {
-  //only authorized user can shorten URL
-  const user = getUserById(req);
-  if (!user) {
-    return res.status(401).send("Unauthorized");
-  }
-  
-  //continue if user is authorized
-  let id = generateRandomString();
-  // Check if id already exists, generate a new one if it does
-  while (urlDatabase[id]) {
-    id = generateRandomString();
-  }
-  // Validate the longURL is valid
-  let longURL = req.body.longURL;
-  if (!validUrl.isUri(longURL)) {
-    return res.redirect(`/urls/new?error=Invalid URL format`);
-  }
-  
-  // Add a new key-value pair to the urlDatabase object
-  urlDatabase[id] = {
-    longURL: longURL,
-    userID: user.id,
-  };
-  
-  // Redirect to the newly created short URL page
-  res.redirect(`/urls/${id}`);
-});
-
-// POST route to delete a URL resource
-app.post("/urls/:id/delete", (req, res) => {
-  const id = req.params.id;
-  const user = getUserById(req);
-  
-  if (!user) {
-    return res.redirect("/login");
-  }
-  
-  if (!urlDatabase[id] || urlDatabase[id].userID !== user.id) {
-    return res.status(403).send("You do not have permission to delete this URL");
-  }
-  
-  delete urlDatabase[id];
-  // Redirect to the URLs index page
-  res.redirect("/urls");
-});
-
-// POST route to update a URL
-app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  const user = getUserById(req);
-  
-  if (!user) {
-    return res.redirect("/login");
-  }
-  
-  if (!urlDatabase[id]) {
-    return res.status(404).send("URL not found");
-  }
-  
-  if (!urlDatabase[id] || urlDatabase[id].userID !== user.id) {
-    return res.status(403).send("You do not have permission to edit this URL");
-  }
-  
-  // Update the long URL for the given short URL id
-  const newLongURL = req.body.newLongURL;
-  urlDatabase[id].longURL = newLongURL;
-  res.redirect("/urls");
-});
-
-//POST to /login to authenticate the user with the hashed passwords
-app.post("/login", (req, res) => {
-  const {email, password} = req.body;
-  console.log(JSON.stringify(req.body));
-  
-  // Find the user by email
-  let user;
-  for (const userId in users) {
-    if (users[userId].email === email) {
-      user = users[userId];
-      break;
-    }
-  }
-  
-  // If user not found, return an error
-  if (!user) {
-    return res.status(403).send("Email not found");
-  }
-  
-  // Compare the entered password with the stored hashed password
-  bcrypt.compare(password, user.password, (err, result) => {
-    if (err) {
-      return res.status(500).send("Internal server error");
-    }
-    
-    if (result) {
-      // Passwords match, set the user_id cookie and redirect to /urls
-      res.cookie('user_id', user.id);
-      res.redirect("/urls");
-    } else {
-      // Passwords do not match, return an error
-      res.status(403).send("Incorrect password");
-    }
-  });
-});
-
-
-//POST to/logout to clear the cookie
-app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
-  res.redirect("/login");
-  
-});
-
-// a POST /register endpoint with hash passwords
-app.post("/register", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  
-  //check for existed new id for user
-  let id = generateRandomString();
-  while (users[id]) {
-    id = generateRandomString();
-  }
-  
-  //check if email or password is empty
-  if (!email || !password) {
-    return res.status(400).send("Email and password are required");
-  }
-  for (const user in users) {
-    if (users[user].email === email) {
-      return res.status(400).send("Email already exists");
-    }
-  }
-  
-  // Hash the password before storing it
-  bcrypt.hash(password, saltRounds, (err, hash) => {
-    if (err) {
-      return res.status(500).send("Internal server error when hashing");
-    }
-    
-    // Add the new user to the users object
-    users[id] = {
-      id,
-      email,
-      password: hash,
-    };
-    
-    // Set a user_id cookie containing the user's newly generated ID
-    res.cookie('user_id', id);
-    res.redirect("/urls");
-  });
-});
 
 // GET route for the home page
 app.get("/", (req, res) => {
@@ -333,3 +179,154 @@ app.get("/login", (req, res) => {
   };
   res.render("login", templateVars);
 });
+
+
+// POST route to receive the form submission and create a new short URL
+app.post("/urls", (req, res) => {
+  //only authorized user can shorten URL
+  const user = getUserById(req);
+  if (!user) {
+    return res.status(401).send("Unauthorized");
+  }
+  
+  //continue if user is authorized
+  let id = generateRandomString();
+  // Check if id already exists, generate a new one if it does
+  while (urlDatabase[id]) {
+    id = generateRandomString();
+  }
+  // Validate the longURL is valid
+  let longURL = req.body.longURL;
+  if (!validUrl.isUri(longURL)) {
+    return res.redirect(`/urls/new?error=Invalid URL format`);
+  }
+  
+  // Add a new key-value pair to the urlDatabase object
+  urlDatabase[id] = {
+    longURL: longURL,
+    userID: user.id,
+  };
+  
+  // Redirect to the newly created short URL page
+  res.redirect(`/urls/${id}`);
+});
+
+// POST route to delete a URL resource
+app.post("/urls/:id/delete", (req, res) => {
+  const id = req.params.id;
+  const user = getUserById(req);
+  
+  if (!user) {
+    return res.redirect("/login");
+  }
+  
+  if (!urlDatabase[id] || urlDatabase[id].userID !== user.id) {
+    return res.status(403).send("You do not have permission to delete this URL");
+  }
+  
+  delete urlDatabase[id];
+  // Redirect to the URLs index page
+  res.redirect("/urls");
+});
+
+// POST route to update a URL
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const user = getUserById(req);
+  
+  if (!user) {
+    return res.redirect("/login");
+  }
+  
+  if (!urlDatabase[id]) {
+    return res.status(404).send("URL not found");
+  }
+  
+  if (!urlDatabase[id] || urlDatabase[id].userID !== user.id) {
+    return res.status(403).send("You do not have permission to edit this URL");
+  }
+  
+  // Update the long URL for the given short URL id
+  const newLongURL = req.body.newLongURL;
+  urlDatabase[id].longURL = newLongURL;
+  res.redirect("/urls");
+});
+
+//POST to /login to authenticate the user with the hashed passwords
+app.post("/login", (req, res) => {
+  const {email, password} = req.body;
+  
+  // Find the user by email
+  let user;
+  for (const userId in users) {
+    if (users[userId].email === email) {
+      user = users[userId];
+      break;
+    }
+  }
+  
+  // If user not found, return an error
+  if (!user) {
+    return res.status(403).send("Email not found");
+  }
+  //error checking
+  // console.log('Hashed passwords: ', user.password);
+  // console.log('Entered password: ', password);
+  
+  // Compare the entered password with the stored hashed password
+  const result = bcrypt.compareSync(password, user.password);
+  
+  if (result) {
+    // Passwords match, set the user_id cookie and redirect to /urls
+    res.cookie('user_id', user.id);
+    res.redirect("/urls");
+  } else {
+    // Passwords do not match, return an error
+    res.status(403).send("Incorrect password");
+  }
+});
+
+
+//POST to/logout to clear the cookie
+app.post("/logout", (req, res) => {
+  res.clearCookie('user_id');
+  res.redirect("/login");
+  
+});
+
+// a POST /register endpoint with hash passwords
+app.post("/register", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  
+  //check for existed new id for user
+  let id = generateRandomString();
+  while (users[id]) {
+    id = generateRandomString();
+  }
+  
+  //check if email or password is empty
+  if (!email || !password) {
+    return res.status(400).send("Email and password are required");
+  }
+  for (const user in users) {
+    if (users[user].email === email) {
+      return res.status(400).send("Email already exists");
+    }
+  }
+  
+  // Hash the password before storing it
+  const hash = bcrypt.hashSync(password, saltRounds);
+  
+  // Add the new user to the users object
+  users[id] = {
+    id,
+    email,
+    password: hash,
+  };
+  
+  // Set a user_id cookie containing the user's newly generated ID
+  res.cookie('user_id', id);
+  res.redirect("/urls");
+});
+
