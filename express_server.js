@@ -14,8 +14,14 @@ app.use(cookieParser());
 
 // In-memory database to store URLs
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 const users = {
@@ -42,6 +48,18 @@ function getUserById(req) {
   return users[userId];
 }
 
+//filer the URLs by user_id
+function urlsForUser(id) {
+  const urls = {};
+  for (const url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      urls[url] = urlDatabase[url];
+    }
+  }
+  return urls;
+}
+
+
 // Middleware to parse the body of POST requests
 app.use(express.urlencoded({extended: true}));
 
@@ -66,7 +84,10 @@ app.post("/urls", (req, res) => {
   }
   
   // Add a new key-value pair to the urlDatabase object
-  urlDatabase[id] = longURL;
+  urlDatabase[id] = {
+    longURL: longURL,
+    userID: user.id,
+  };
   
   // Redirect to the newly created short URL page
   res.redirect(`/urls/${id}`);
@@ -75,6 +96,16 @@ app.post("/urls", (req, res) => {
 // POST route to delete a URL resource
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
+  const user = getUserById(req);
+  
+  if (!user) {
+    return res.redirect("/login");
+  }
+  
+  if (!urlDatabase[id] || urlDatabase[id].userID !== user.id) {
+    return res.status(403).send("You do not have permission to delete this URL");
+  }
+  
   delete urlDatabase[id];
   // Redirect to the URLs index page
   res.redirect("/urls");
@@ -83,8 +114,23 @@ app.post("/urls/:id/delete", (req, res) => {
 // POST route to update a URL
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
+  const user = getUserById(req);
+  
+  if (!user) {
+    return res.redirect("/login");
+  }
+  
+  if (!urlDatabase[id]) {
+    return res.status(404).send("URL not found");
+  }
+  
+  if (!urlDatabase[id] || urlDatabase[id].userID !== user.id) {
+    return res.status(403).send("You do not have permission to edit this URL");
+  }
+  
   // Update the long URL for the given short URL id
-  urlDatabase[id] = req.body.newLongURL;
+  const newLongURL = req.body.newLongURL;
+  urlDatabase[id].longURL = newLongURL;
   res.redirect("/urls");
 });
 
@@ -179,7 +225,7 @@ app.get("/", (req, res) => {
 
 // Start the server and listen on the specified port
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Tinyapp listening on port ${PORT}!`);
 });
 
 // GET route to return the URL database as JSON
@@ -190,8 +236,15 @@ app.get("/urls.json", (req, res) => {
 // GET route to render the URLs index page
 app.get("/urls", (req, res) => {
   const user = getUserById(req);
+  //if user not login, redirect to /login
+  if (!user) {
+    return res.redirect("/login");
+  }
+  
+  //only user that create the URL can see the URL
+  const urlOwner = urlsForUser(user.id);
   const templateVars = {
-    urls: urlDatabase,
+    urls: urlOwner,
     user,
   };
   res.render("urls_index", templateVars);
@@ -213,9 +266,24 @@ app.get("/urls/new", (req, res) => {
 // GET route to render the page for a specific short URL
 app.get("/urls/:id", (req, res) => {
   const user = getUserById(req);
+  const id = req.params.id;
+  
+  //if not log in
+  if (!user) {
+    return res.redirect("/login");
+  }
+  //if can't find the url id
+  if (!urlDatabase[id]) {
+    return res.status(404).send("URL not found");
+  }
+  //if user is not the owner of the URL
+  if (urlDatabase[id].userID !== user.id) {
+    return res.status(403).send("You do not have permission to view this URL");
+  }
+  
   const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    id: id,
+    longURL: urlDatabase[id].longURL,
     user,
   };
   res.render("urls_show", templateVars);
@@ -226,11 +294,12 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   // give a HTML error message if the id does not exist at GET /u/:id
   const short_id = req.params.id;
+  
   if (!urlDatabase[short_id]) {
     return res.status(404).send("short ID not found");
   }
   
-  const longURL = urlDatabase[short_id];
+  const longURL = urlDatabase[short_id].longURL;
   
   if (!longURL) {
     return res.status(404).send("URL not found");

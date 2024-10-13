@@ -37,7 +37,7 @@ for now (href='#') as we will build the page for this functionality later.-->
         <% for (let id in urls) { %>
             <tr>
                 <td><%= id %></td>
-                <td><%= urls[id] %></td>
+                <td><%= urls[id].longURL %></td>
                 <td>
                     <form method="GET" action="/urls/<%= id %>">
                         <button type="submit" class="btn btn-outline-primary">Edit</button>
