@@ -16,9 +16,28 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 // Function to generate a random string for the shortURL: ex: b2xVn2
 function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
+}
+
+// Helper function to get user object by user_id cookie
+function getUserById(req) {
+  const userId = req.cookies["user_id"];
+  return users[userId];
 }
 
 // Middleware to parse the body of POST requests
@@ -72,6 +91,29 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
+// a POST /register endpoint.
+app.post("/register", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const id = generateRandomString();
+  if (!email || !password) {
+    return res.status(400).send("Email and password are required");
+  }
+  for (const user in users) {
+    if (users[user].email === email) {
+      return res.status(400).send("Email already exists");
+    }
+  }
+  users[id] = {
+    id,
+    email,
+    password,
+  };
+  //After adding the user, set a user_id cookie containing the user's newly generated ID.
+  res.cookie('user_id', id);
+  res.redirect("/urls");
+});
+
 // GET route for the home page
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -89,27 +131,30 @@ app.get("/urls.json", (req, res) => {
 
 // GET route to render the URLs index page
 app.get("/urls", (req, res) => {
+  const user = getUserById(req);
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user,
   };
   res.render("urls_index", templateVars);
 });
 
 // GET route to render the new URL creation page
 app.get("/urls/new", (req, res) => {
+  const user = getUserById(req);
   const templateVars = {
-    username: req.cookies["username"],
+    user,
   };
   res.render("urls_new", templateVars);
 });
 
 // GET route to render the page for a specific short URL
 app.get("/urls/:id", (req, res) => {
+  const user = getUserById(req);
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"],
+    user,
   };
   res.render("urls_show", templateVars);
 });
@@ -127,8 +172,9 @@ app.get("/u/:id", (req, res) => {
 
 //GET route to /register endpoint
 app.get("/register", (req, res) => {
+  const user = getUserById(req);
   const templateVars = {
-    username: req.cookies["username"],
+    user,
   };
   res.render("register", templateVars);
 });
