@@ -47,6 +47,13 @@ app.use(express.urlencoded({extended: true}));
 
 // POST route to receive the form submission and create a new short URL
 app.post("/urls", (req, res) => {
+  //only authorized user can shorten URL
+  const user = getUserById(req);
+  if (!user) {
+    return res.status(401).send("Unauthorized");
+  }
+  
+  //continue if user is authorized
   let id = generateRandomString();
   // Check if id already exists, generate a new one if it does
   while (urlDatabase[id]) {
@@ -129,7 +136,12 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const id = generateRandomString();
+  
+  //check for existed new id for user
+  let id = generateRandomString();
+  while (users[id]) {
+    id = generateRandomString();
+  }
   
   //check if email or password is empty
   if (!email || !password) {
@@ -188,6 +200,10 @@ app.get("/urls", (req, res) => {
 // GET route to render the new URL creation page
 app.get("/urls/new", (req, res) => {
   const user = getUserById(req);
+  //if user not login (only authorized user can shorten URL), redirect to /login
+  if (!user) {
+    return res.redirect("/login");
+  }
   const templateVars = {
     user,
   };
@@ -206,8 +222,15 @@ app.get("/urls/:id", (req, res) => {
 });
 
 // GET route to redirect to the long URL for a given short URL id
+//ANYBODY can access the short URLs and redirect to the long URL
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  // give a HTML error message if the id does not exist at GET /u/:id
+  const short_id = req.params.id;
+  if (!urlDatabase[short_id]) {
+    return res.status(404).send("short ID not found");
+  }
+  
+  const longURL = urlDatabase[short_id];
   
   if (!longURL) {
     return res.status(404).send("URL not found");
@@ -219,6 +242,10 @@ app.get("/u/:id", (req, res) => {
 //GET route to /register endpoint
 app.get("/register", (req, res) => {
   const user = getUserById(req);
+  //if user login, redirect to /urls
+  if (user) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user,
   };
@@ -228,6 +255,10 @@ app.get("/register", (req, res) => {
 // GET route to /login endpoint with login.ejs
 app.get("/login", (req, res) => {
   const user = getUserById(req);
+  //if user login, redirect to /urls
+  if (user) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user,
   };
