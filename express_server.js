@@ -8,24 +8,13 @@ const saltRounds = 10;
 // Import middleware and helper functions
 const {sessionMiddleware} = require('./middleware');
 const {users, generateRandomString, getUserById, urlsForUser} = require('./helpers');
+const {urlDatabase} = require('./data/urlDatabase');
 
 // Set the view engine to ejs
 app.set("view engine", "ejs");
 
 // Use cookie-session middleware
 app.use(sessionMiddleware);
-
-// In-memory database to store URLs
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
 
 
 // Middleware to parse the body of POST requests
@@ -34,7 +23,11 @@ app.use(express.urlencoded({extended: true}));
 
 // GET route for the home page
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const user = getUserById(req);
+  if (user) {
+    return res.redirect("/urls");
+  }
+  return res.redirect("/login");
 });
 
 // Start the server and listen on the specified port
@@ -50,9 +43,9 @@ app.get("/urls.json", (req, res) => {
 // GET route to render the URLs index page
 app.get("/urls", (req, res) => {
   const user = getUserById(req);
-  //if user not login, redirect to /login
+  //if user not login, eturn HTML with a relevant error message.
   if (!user) {
-    return res.redirect("/login");
+    return res.status(401).send("<h1>Unauthorized</h1><p>Please log in to view your URLs.</p>");
   }
   
   //only user that create the URL can see the URL
@@ -84,7 +77,7 @@ app.get("/urls/:id", (req, res) => {
   
   //if not log in
   if (!user) {
-    return res.redirect("/login");
+    return res.status(401).send("<h1>Unauthorized</h1><p>Please log in to view this URL.</p>");
   }
   //if can't find the url id
   if (!urlDatabase[id]) {
